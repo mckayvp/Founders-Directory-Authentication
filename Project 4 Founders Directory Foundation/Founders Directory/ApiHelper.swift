@@ -30,7 +30,7 @@ class ApiHelper {
     }
 
     struct Constants {
-        static let baseSyncUrl = "https://scriptures.byu.edu/founders/v4/"
+        static let baseSyncUrl = "https://scriptures.byu.edu/founders/v5/"
         static let failureCode = "0"
         static let photoFounder = "founder"
         static let photoSpouse = "spouse"

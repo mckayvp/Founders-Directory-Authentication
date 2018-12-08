@@ -160,7 +160,7 @@ class ProfileViewController : UIViewController {
 
         super.viewWillDisappear(animated)
 
-        if alternateView.isHidden {
+        if alternateView != nil && alternateView.isHidden {
             alternateView.isHidden = false
             alternateView.alpha = 1
         }
