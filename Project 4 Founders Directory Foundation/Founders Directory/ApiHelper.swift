@@ -132,6 +132,8 @@ class ApiHelper {
 
             return
         }
+        print("username: \(username)")
+        print("password: \(password)")
 
         let loginUrl = ApiHelper.shared.syncUrl(
             forCommand: Command.login,

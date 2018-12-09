@@ -21,6 +21,7 @@ class LoginViewController : UITableViewController {
     // MARK: - Actions
 
     @IBAction func signIn(_ sender: UIButton) {
+        print("requestLogin()")
         requestLogin()
     }
 
@@ -36,6 +37,14 @@ class LoginViewController : UITableViewController {
         view.addSubview(screenView)
         self.screenView = screenView
     }
+    
+    private func loginErrorAlert(_ failureMessage: String) {
+        let alert = UIAlertController(title: "\(failureMessage)",
+                                      message: "",
+                                      preferredStyle: UIAlertController.Style.alert)
+        alert.addAction(UIAlertAction(title: "OK", style: UIAlertAction.Style.default, handler: nil))
+        self.present(alert, animated: true, completion: nil)
+    }
 
     private func requestLogin() {
         networkIndicator.startAnimating()
@@ -44,14 +53,13 @@ class LoginViewController : UITableViewController {
         ApiHelper.shared.login("user", "secret") { [weak self] (message) in
             DispatchQueue.main.async {
                 if let failureMessage = message {
-                    // NEEDSWORK: display the failure message to the user as given by the API
-                    print(failureMessage)
+                    self?.loginErrorAlert(failureMessage)
                 } else {
                     if let foundersApp = UIApplication.shared.delegate as? AppDelegate {
+                        print("successful Login")
                         foundersApp.displayMasterScene(animated: true)
                     } else {
-                        // NEEDSWORK: display a generic failure message
-                        print("Login failed")
+                        self?.loginErrorAlert("Unexpected Login Error Occured")
                     }
                 }
 
