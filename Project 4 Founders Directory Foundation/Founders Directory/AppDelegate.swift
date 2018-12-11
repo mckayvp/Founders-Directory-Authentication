@@ -21,7 +21,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UISplitViewControllerDele
         static let detailVCIdentifier = "DetailVC"
         static let login = "Login"
         static let main = "Main"
-//        static let logInIdentifier = "Log In"
     }
 
     // MARK: - Properties

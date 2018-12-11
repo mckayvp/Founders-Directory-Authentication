@@ -119,13 +119,14 @@ class ApiHelper {
 
     func login(_ username: String, _ password: String, completionHander: @escaping (String?) -> ()) {
         // NEEDSWORK: get rid of this bypass code!
-        if username == "user" && password == "secret" {
+        if username == User.sharedConfig.username && password == User.sharedConfig.password {
             sessionToken = "b24b226e6862e4243110c844fe04ca34"
 
             let defaults = UserDefaults.standard
 
             defaults.set("31", forKey: Key.userId)
             defaults.set(sessionToken, forKey: Key.sessionId)
+            print("sessionID: \(Key.sessionId)")
             defaults.synchronize()
 
             completionHander(nil)
