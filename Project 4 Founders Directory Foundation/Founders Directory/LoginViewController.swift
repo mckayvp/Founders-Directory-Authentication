@@ -14,15 +14,13 @@ class LoginViewController : UITableViewController {
     // MARK: - Constants
     let myContext = LAContext()
     let myLocalizedReasonString = "Authenticate to view founders"
-    let loginController = UIAlertController(title: "Please Sign In",
-                                            message: "Enter Username and Password",
-                                            preferredStyle: .alert)
-
 
     // MARK: - Properties
 
     var screenView: UIView?
     var biometricError: NSError?
+    var username = "user"
+    var password = "secret"
 
     // MARK: - Outlets
 
@@ -34,6 +32,12 @@ class LoginViewController : UITableViewController {
         print("requestLogin()")
         requestLogin()
     }
+    
+//    override func viewDidLoad() {
+//        super.viewDidLoad()
+//
+//        ApiHelper.logout()
+//    }
 
     // MARK: - Private helpers
 
@@ -48,23 +52,23 @@ class LoginViewController : UITableViewController {
         self.screenView = screenView
     }
     
-    private func loginAlert() {
-        let la = UIAlertController(title: "Please Sign In",
-                                      message: "Enter Username and Password",
-                                      preferredStyle: UIAlertController.Style.alert)
-        la.addTextField { (textField) in
-            textField.text = "Username"
-        }
-        la.addTextField { (textField) in
-            textField.text = "Password"
-        }
-        
-        la.addAction(UIAlertAction(title: "OK", style: .default, handler: { [weak la] (_) in
-            let userField = la!.textFields![0] // Force unwrapping because we know it exists.
-            let passwordField = la!.textFields![1]
-            print("User field: \(userField.text ?? "user") Password: \(passwordField.text ?? "secret")")
-        }))
-    }
+//    private func loginAlert() {
+//        let la = UIAlertController(title: "Please Sign In",
+//                                      message: "Enter Username and Password",
+//                                      preferredStyle: UIAlertController.Style.alert)
+//        la.addTextField { (textField) in
+//            textField.text = "Username"
+//        }
+//        la.addTextField { (textField) in
+//            textField.text = "Password"
+//        }
+//
+//        la.addAction(UIAlertAction(title: "OK", style: .default, handler: { [weak la] (_) in
+//            let userField = la!.textFields![0] // Force unwrapping because we know it exists.
+//            let passwordField = la!.textFields![1]
+//            print("User field: \(userField.text ?? "user") Password: \(passwordField.text ?? "secret")")
+//        }))
+//    }
     
     private func showAlert(_ alertTitle: String, _ alertMessage: String) {
         let alert = UIAlertController(title: "\(alertTitle)",
@@ -86,12 +90,13 @@ class LoginViewController : UITableViewController {
                 
                 DispatchQueue.main.async {
                     if success {
-                        if let foundersApp = UIApplication.shared.delegate as? AppDelegate {
-                            print("successful biometric Login")
-                            foundersApp.displayMasterScene(animated: true)
-                        } else {
-                            self.showAlert("Unexpected Login Error Occured", "")
-                        }
+                        self.textLogin(self.username, self.password)
+//                        if let foundersApp = UIApplication.shared.delegate as? AppDelegate {
+//                            print("successful biometric Login")
+//                            foundersApp.displayMasterScene(animated: true)
+//                        } else {
+//                            self.showAlert("Unexpected Login Error Occured", "")
+//                        }
                     } else { // catch biometric errors
 //                        self.loginAlert()
                         print("username and password")
@@ -102,12 +107,13 @@ class LoginViewController : UITableViewController {
                 }
             }
         } else { // no biometry
-            textLogin()
+//            textLogin()
+            showAlert("Login", "Enter Username and Password")
         }
     }
     
-    private func textLogin() {
-        ApiHelper.shared.login("user", "secret") { [weak self] (message) in
+private func textLogin(_ username: String, _ password: String) {
+        ApiHelper.shared.login(username, password) { [weak self] (message) in
             DispatchQueue.main.async {
                 if let failureMessage = message {
                     self?.showAlert(failureMessage, "")
@@ -119,7 +125,7 @@ class LoginViewController : UITableViewController {
                         self?.showAlert("Unexpected Login Error Occured", "")
                     }
                 }
-                
+
                 if let screenView = self?.screenView {
                     screenView.removeFromSuperview()
                     self?.networkIndicator.stopAnimating()
