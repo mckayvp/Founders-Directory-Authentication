@@ -77,16 +77,19 @@ class LoginViewController : UITableViewController {
             let userField = ca.textFields![0] // Force unwrapping because we know it exists.
             let passwordField = ca.textFields![1]
             let passwordField2 = ca.textFields![2]
-            if passwordField != passwordField2 {
+            if passwordField.text != passwordField2.text {
                 print("passwords no match")
+                print(passwordField.text as Any)
+                print(passwordField2.text as Any)
+                self.errorAlert()
+            } else {
+                print(userField.text ?? "")
+                User.sharedConfig.username = userField.text ?? ""
+                User.sharedConfig.password = passwordField.text ?? ""
+                User.sharedConfig.deviceId = UIDevice.current.identifierForVendor!.uuidString
+                self.deviceID = User.sharedConfig.deviceId
+                self.textLogin(User.sharedConfig.username, User.sharedConfig.password)
             }
-            
-            print(userField.text ?? "")
-            User.sharedConfig.username = userField.text ?? ""
-            User.sharedConfig.password = passwordField.text ?? ""
-            User.sharedConfig.deviceId = UIDevice.current.identifierForVendor!.uuidString
-            self.deviceID = User.sharedConfig.deviceId
-            self.textLogin(User.sharedConfig.username, User.sharedConfig.password)
         }
         
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
@@ -122,6 +125,21 @@ class LoginViewController : UITableViewController {
         screenView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(screenView)
         self.screenView = screenView
+    }
+    
+    private func errorAlert() {
+        let ea = UIAlertController(
+            title: "Password Mismatch",
+            message: "Enter password again",
+            preferredStyle: .alert)
+        
+        let closeAction = UIAlertAction(title: "OK", style: .cancel) {
+            (action) in
+            self.createAccount()
+        }
+        
+        ea.addAction(closeAction)
+        self.present(ea, animated: true)
     }
     
     private func loginAlert() {
