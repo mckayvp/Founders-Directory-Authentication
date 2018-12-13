@@ -40,6 +40,10 @@ extension String {
     var length : Int {
         return self.count
     }
+    
+    var url: URL? {
+        return URL(string: self)
+    }
 }
 
 extension UIColor {

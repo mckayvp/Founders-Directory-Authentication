@@ -11,53 +11,59 @@ import LocalAuthentication
 
 class LoginViewController : UITableViewController {
     
+    
     // MARK: - Constants
     let context = LAContext()
     let localizedReasonString = "Authenticate to view founders"
 
+    
     // MARK: - Properties
-
     var screenView: UIView?
     var biometricError: NSError?
     var deviceID = User.sharedConfig.deviceId
 
     // MARK: - Outlets
-
     @IBOutlet weak var networkIndicator: UIActivityIndicatorView!
-
+    
     // MARK: - Actions
 
     @IBAction func signIn(_ sender: UIButton) {
         requestLogin()
     }
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
         User.sharedConfig.deviceId = UIDevice.current.identifierForVendor!.uuidString
     }
 
-
+    
     // MARK: - Private helpers
     
     private func createAccount() {
         let ca = UIAlertController(
-            title: "Create New Account",
-            message: "Enter Username and Password",
-            preferredStyle: .alert)
+                                    title: "Create New Account",
+                                    message: "Enter Username and Password",
+                                    preferredStyle: .alert)
+        
         let createAction = UIAlertAction(title: "Create", style: .default) {
-            (action) in
+            _ in
             let userField = ca.textFields![0] // Force unwrapping because we know it exists.
             let passwordField = ca.textFields![1]
             let passwordField2 = ca.textFields![2]
-            if passwordField.text != passwordField2.text {
-                self.errorAlert()
+            if userField.text == "" {
+                self.errorAlert("Username cannot be blank")
+            }
+            else if passwordField.text == "" {
+                self.errorAlert("Password cannot be blank")
+            }
+            else if passwordField.text != passwordField2.text {
+                self.errorAlert("Passwords do no match")
             } else {
-                print(userField.text ?? "")
                 User.sharedConfig.username = userField.text ?? ""
                 User.sharedConfig.password = passwordField.text ?? ""
                 User.sharedConfig.deviceId = UIDevice.current.identifierForVendor!.uuidString
                 self.deviceID = User.sharedConfig.deviceId
-                self.textLogin(User.sharedConfig.username, User.sharedConfig.password)
+                self.executeLogin(User.sharedConfig.username, User.sharedConfig.password)
             }
         }
         
@@ -85,18 +91,18 @@ class LoginViewController : UITableViewController {
         self.present(ca, animated: true)
     }
     
-    private func errorAlert() {
+    private func errorAlert(_ message: String) {
         let ea = UIAlertController(
-            title: "Passwords Don't Match",
-            message: "Enter password again",
-            preferredStyle: .alert)
+                                    title: "Error Creating Account",
+                                    message: "\(message)",
+                                    preferredStyle: .alert)
         
         let closeAction = UIAlertAction(title: "OK", style: .cancel) {
-            (action) in
+            _ in
             self.createAccount()
         }
-        
         ea.addAction(closeAction)
+        
         self.present(ea, animated: true)
     }
     
@@ -106,10 +112,10 @@ class LoginViewController : UITableViewController {
                                     message: "Enter Username and Password",
                                     preferredStyle: .alert)
         let loginAction = UIAlertAction(title: "Log In", style: .default) {
-            (action) in
+            _ in
             let userField = la.textFields![0] // Force unwrapping because we know it exists.
             let passwordField = la.textFields![1]
-            self.textLogin(userField.text!, passwordField.text!)
+            self.executeLogin(userField.text!, passwordField.text!)
         }
         
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
@@ -132,9 +138,11 @@ class LoginViewController : UITableViewController {
     }
     
     private func showAlert(_ alertTitle: String, _ alertMessage: String) {
-        let alert = UIAlertController(title: alertTitle,
+        let alert = UIAlertController(
+                                      title: alertTitle,
                                       message: alertMessage,
                                       preferredStyle: UIAlertController.Style.alert)
+        
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         self.present(alert, animated: true)
     }
@@ -143,45 +151,62 @@ class LoginViewController : UITableViewController {
 
         if deviceID == User.sharedConfig.deviceId { // user has already logged in with this device
             
-            if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &biometricError) { // Use biometric login
-                
+            if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &biometricError) {
+                // Use biometric login
                 context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason:
-                localizedReasonString) {
+                localizedReasonString) { // Present biometric login
                     [unowned self] (success, authenticationError) in
                     
                     DispatchQueue.main.async {
                         if success {
-                            self.textLogin(User.sharedConfig.username, User.sharedConfig.password)
+                            self.executeLogin(User.sharedConfig.username, User.sharedConfig.password)
                         } else { // catch biometric errors
                             self.loginAlert()
                         }
                     }
                 }
-            } else { // no biometry
-                loginAlert()
+            } else { // not enrolled in biometry auth
+                settingsAlert()
             }
         } else { // first time for device, create username and password
             createAccount()
         }
     }
     
-    private func textLogin(_ username: String, _ password: String) {
+    private func settingsAlert() {
+        let sa = UIAlertController(
+                                    title: "Permission Required",
+                                    message: "You previously disabled biometric authentication. Use the Settings app to enable Face ID or Touch ID.",
+                                    preferredStyle: .alert)
+        
+        let manualLogin = UIAlertAction(title: "Manual Login", style: .default) {
+                                                _ in
+                                                self.loginAlert()
+                                        }
+        let launchSettings = UIAlertAction(title: "Open Settings", style: .default) {
+                                                _ in
+                                                if let url = UIApplication.openSettingsURLString.url {
+                                                    UIApplication.shared.open(url)
+                                                }
+                                            }
+        
+        sa.addAction(manualLogin)
+        sa.addAction(launchSettings)
+        
+        self.present(sa, animated: true)
+    }
+    
+    private func executeLogin(_ username: String, _ password: String) {
         ApiHelper.shared.login(username, password) { [weak self] (message) in
             DispatchQueue.main.async {
                 if let failureMessage = message {
                     self?.showAlert(failureMessage, "Incorrect username or password")
                 } else {
                     if let foundersApp = UIApplication.shared.delegate as? AppDelegate {
-                        print("successful Login")
                         foundersApp.displayMasterScene(animated: true)
                     } else {
                         self?.showAlert("Unexpected Login Error Occured", "")
                     }
-                }
-
-                if let screenView = self?.screenView {
-                    screenView.removeFromSuperview()
-                    self?.networkIndicator.stopAnimating()
                 }
             }
         }
