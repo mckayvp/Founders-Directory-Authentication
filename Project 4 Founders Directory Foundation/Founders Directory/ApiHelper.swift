@@ -118,7 +118,7 @@ class ApiHelper {
     }
 
     func login(_ username: String, _ password: String, completionHander: @escaping (String?) -> ()) {
-        // NEEDSWORK: get rid of this bypass code!
+
         if username == User.sharedConfig.username && password == User.sharedConfig.password {
             sessionToken = "b24b226e6862e4243110c844fe04ca34"
 
@@ -133,8 +133,6 @@ class ApiHelper {
 
             return
         }
-        print("username: \(username)")
-        print("password: \(password)")
 
         let loginUrl = ApiHelper.shared.syncUrl(
             forCommand: Command.login,
