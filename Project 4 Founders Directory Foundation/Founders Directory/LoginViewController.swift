@@ -20,13 +20,15 @@ class LoginViewController : UITableViewController {
     // MARK: - Properties
     var screenView: UIView?
     var biometricError: NSError?
+    var biometricType = "None"
     var deviceID = User.sharedConfig.deviceId
-
+    
+    
     // MARK: - Outlets
     @IBOutlet weak var networkIndicator: UIActivityIndicatorView!
     
+    
     // MARK: - Actions
-
     @IBAction func signIn(_ sender: UIButton) {
         requestLogin()
     }
@@ -111,6 +113,7 @@ class LoginViewController : UITableViewController {
                                     title: "Please Sign In",
                                     message: "Enter Username and Password",
                                     preferredStyle: .alert)
+        
         let loginAction = UIAlertAction(title: "Log In", style: .default) {
             _ in
             let userField = la.textFields![0] // Force unwrapping because we know it exists.
@@ -150,7 +153,7 @@ class LoginViewController : UITableViewController {
     private func requestLogin() {
 
         if deviceID == User.sharedConfig.deviceId { // user has already logged in with this device
-            
+            // https://www.hackingwithswift.com/read/28/4/touch-to-activate-touch-id-face-id-and-localauthentication
             if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &biometricError) {
                 // Use biometric login
                 context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason:
@@ -160,8 +163,12 @@ class LoginViewController : UITableViewController {
                     DispatchQueue.main.async {
                         if success {
                             self.executeLogin(User.sharedConfig.username, User.sharedConfig.password)
-                        } else { // catch biometric errors
-                            self.loginAlert()
+                        } else { // biometric auth errors sent here, if any
+                            if let authError = authenticationError {
+                                if authError._code == -3 { // Type in username/password
+                                    self.loginAlert()
+                                }
+                            }
                         }
                     }
                 }
@@ -174,9 +181,18 @@ class LoginViewController : UITableViewController {
     }
     
     private func settingsAlert() {
+        User.sharedConfig.biometricType = context.biometryType.rawValue
+        if User.sharedConfig.biometricType == 1 {
+            biometricType = "Touch ID"
+        }
+        else if User.sharedConfig.biometricType == 2 {
+            biometricType = "Face ID"
+        } else {
+            biometricType = "None"
+        }
         let sa = UIAlertController(
                                     title: "Permission Required",
-                                    message: "You previously disabled biometric authentication. Use the Settings app to enable Face ID or Touch ID.",
+                                    message: "You previously disabled authentication with \(biometricType). Use the Settings app to enable \(biometricType) again.",
                                     preferredStyle: .alert)
         
         let manualLogin = UIAlertAction(title: "Manual Login", style: .default) {
@@ -194,6 +210,7 @@ class LoginViewController : UITableViewController {
         sa.addAction(launchSettings)
         
         self.present(sa, animated: true)
+        return
     }
     
     private func executeLogin(_ username: String, _ password: String) {

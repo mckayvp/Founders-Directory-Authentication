@@ -19,4 +19,5 @@ class User {
     var userId = ""
     var username = "mckaypalmer@gmail.com"
     var password = "password1"
+    var biometricType = 0
 }
